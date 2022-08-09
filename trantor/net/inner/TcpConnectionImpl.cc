@@ -1584,6 +1584,8 @@ void TcpConnectionImpl::sendStream(
 
 void TcpConnectionImpl::sendFileInLoop(const BufferNodePtr &filePtr)
 {
+    const size_t kReadSize = 1 * 1024 * 1024;
+
     loop_->assertInLoopThread();
     assert(filePtr->isFile());
 #ifdef __linux__
@@ -1628,7 +1630,7 @@ void TcpConnectionImpl::sendFileInLoop(const BufferNodePtr &filePtr)
         if (!fileBufferPtr_)
         {
             fileBufferPtr_ = std::make_unique<std::vector<char>>();
-            fileBufferPtr_->reserve(16 * 1024);
+            fileBufferPtr_->reserve(kReadSize);
         }
         while ((filePtr->fileBytesToSend_ > 0) || !fileBufferPtr_->empty())
         {
@@ -1637,7 +1639,7 @@ void TcpConnectionImpl::sendFileInLoop(const BufferNodePtr &filePtr)
             {
                 //                LOG_TRACE << "send stream in loop: fetch data
                 //                on buffer empty";
-                fileBufferPtr_->resize(16 * 1024);
+                fileBufferPtr_->resize(kReadSize);
                 std::size_t nData;
                 nData = filePtr->streamCallback_(fileBufferPtr_->data(),
                                                  fileBufferPtr_->size());
@@ -1719,7 +1721,7 @@ void TcpConnectionImpl::sendFileInLoop(const BufferNodePtr &filePtr)
     LOG_TRACE << "send file in loop";
     if (!fileBufferPtr_)
     {
-        fileBufferPtr_ = std::make_unique<std::vector<char>>(16 * 1024);
+        fileBufferPtr_ = std::make_unique<std::vector<char>>(kReadSize);
     }
 #ifndef _WIN32
     lseek(filePtr->sendFd_, filePtr->offset_, SEEK_SET);
